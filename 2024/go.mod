@@ -1,4 +1,4 @@
-module aoc2025
+module github.com/unkiwii/aoc/aoc2024
 
 go 1.24.3
 
