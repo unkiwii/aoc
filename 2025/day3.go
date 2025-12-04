@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 	"strconv"
+
+	"github.com/unkiwii/aoc/lib/stack"
 )
 
 // --- Day 3: Lobby ---
@@ -124,7 +126,7 @@ func day3(filename string, numberOfDigits int) int {
 			log.Fatalf("can't read bank: %v", err)
 		}
 
-		stack := NewStack[byte]()
+		stack := stack.New[byte]()
 		stack.Push(bank[0])
 
 		maxJoltage := 0
@@ -150,41 +152,4 @@ func day3(filename string, numberOfDigits int) int {
 
 		result += maxJoltage
 	}
-}
-
-type Stack[T any] []T
-
-func NewStack[T any]() Stack[T] {
-	return Stack[T]{}
-}
-
-func (s Stack[T]) Slice() []T {
-	c := make([]T, len(s))
-	copy(c, s)
-	return c
-}
-
-func (s Stack[T]) Len() int {
-	return len(s)
-}
-
-func (s *Stack[T]) Push(v T) {
-	*s = append(*s, v)
-}
-
-func (s *Stack[T]) Pop() (r T) {
-	if len(*s) != 0 {
-		i := len(*s) - 1
-		r, *s = (*s)[i], (*s)[:i]
-	}
-	return
-}
-
-func (s Stack[T]) Top() T {
-	i := len(s) - 1
-	if i >= 0 {
-		return s[i]
-	}
-	var zero T
-	return zero
 }
