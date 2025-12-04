@@ -5,5 +5,6 @@ import (
 )
 
 func main() {
-	time.It("Day1Part1", func() int { return 0 })
+	time.It("Day1Part1", func() int { return Day1Part1("input/day1") })
+	time.It("Day1Part2", func() int { return Day1Part2("input/day1") })
 }
