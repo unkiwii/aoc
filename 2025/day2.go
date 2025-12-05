@@ -2,12 +2,12 @@ package main
 
 import (
 	"bufio"
-	"bytes"
-	"io"
 	"log"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/unkiwii/aoc/lib/interval"
 )
 
 // --- Day 2: Gift Shop ---
@@ -138,9 +138,9 @@ func day2(filename string, isInvalidID func(int) bool) int {
 
 	r := bufio.NewReader(file)
 	for {
-		ran, isEOF := readRange(r)
+		i, isEOF := interval.Read(r, ',', []byte{'-'})
 
-		for n := range RangeOver(ran) {
+		for n := range interval.Range(i) {
 			if isInvalidID(n) {
 				result += n
 			}
@@ -167,51 +167,4 @@ func SplitN(s string, n int) []string {
 		left = right
 	}
 	return l
-}
-
-const Comma = byte(',')
-
-var Hyphen = []byte("-")
-
-func readRange(r *bufio.Reader) (Range, bool) {
-	data, err := r.ReadBytes(Comma)
-	isEOF := err == io.EOF
-	if !isEOF && err != nil {
-		log.Fatalf("can't read range: %v", err)
-	}
-
-	// remove Comma or newline from data
-	data = data[:len(data)-1]
-	parts := bytes.Split(data, Hyphen)
-	return Range{
-		low:  parts[0],
-		high: parts[1],
-	}, isEOF
-}
-
-type Range struct {
-	low, high []byte
-}
-
-type RangeOverYield func(int) bool
-
-func RangeOver(r Range) func(RangeOverYield) {
-	noop := func(yield RangeOverYield) {}
-
-	low, err := strconv.Atoi(string(r.low))
-	if err != nil {
-		return noop
-	}
-	high, err := strconv.Atoi(string(r.high))
-	if err != nil {
-		return noop
-	}
-
-	return func(yield RangeOverYield) {
-		for n := low; n <= high; n++ {
-			if !yield(n) {
-				return
-			}
-		}
-	}
 }
