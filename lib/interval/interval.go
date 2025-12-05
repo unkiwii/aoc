@@ -55,11 +55,34 @@ type Interval struct {
 }
 
 func (i Interval) String() string {
-	return fmt.Sprintf("[%d, %d]", i.low, i.high)
+	return fmt.Sprintf("(%d, %d)", i.low, i.high)
 }
 
 func (i Interval) Contains(n int) bool {
 	return i.low <= n && n <= i.high
+}
+
+func (i Interval) Equals(o Interval) bool {
+	return i.low == o.low && i.high == o.high
+}
+
+func (i Interval) IsInside(o Interval) bool {
+	return i.low >= o.low && i.high <= o.high
+}
+
+func (i Interval) Overlaps(o Interval) bool {
+	return i.Contains(o.low) || i.Contains(o.high)
+}
+
+func (i Interval) Merge(o Interval) Interval {
+	return Interval{
+		low:  min(i.low, o.low),
+		high: max(i.high, o.high),
+	}
+}
+
+func (i Interval) Distance() int {
+	return i.high - i.low + 1
 }
 
 type RangeYield func(int) bool
