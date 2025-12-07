@@ -13,4 +13,6 @@ func main() {
 	time.It("Day 4.2", func() int { return Day4Part2("input/day4") })
 	time.It("Day 5.1", func() int { return Day5Part1("input/day5") })
 	time.It("Day 5.2", func() int { return Day5Part2("input/day5") })
+	time.It("Day 6.1", func() int { return Day6Part1("input/day6") })
+	time.It("Day 6.2", func() int { return Day6Part2("input/day6") })
 }
