@@ -66,7 +66,7 @@ import (
 // Consider your complete diagram of the paper roll locations. How many rolls
 // of paper can be accessed by a forklift?
 func Day4Part1(filename string) int {
-	grid := NewGridFromFile(filename)
+	grid := NewDay4GridFromFile(filename)
 	return grid.Mark()
 }
 
@@ -210,7 +210,7 @@ func Day4Part1(filename string) int {
 // Start with your original diagram. How many rolls of paper in total can be
 // removed by the Elves and their forklifts?
 func Day4Part2(filename string) int {
-	grid := NewGridFromFile(filename)
+	grid := NewDay4GridFromFile(filename)
 
 	step := 0
 	result := 0
@@ -230,21 +230,21 @@ func Day4Part2(filename string) int {
 	}
 }
 
-type Grid [][]Cell
+type Day4Grid [][]Day4Cell
 
-type Cell struct {
+type Day4Cell struct {
 	value      byte
 	neighbours byte
 	free       bool
 }
 
-func NewGridFromFile(filename string) Grid {
+func NewDay4GridFromFile(filename string) Day4Grid {
 	file, err := os.Open(filename)
 	if err != nil {
 		log.Fatalf("can't open file %q: %v", filename, err)
 	}
 
-	var grid Grid
+	var grid Day4Grid
 
 	r := bufio.NewReader(file)
 	for line, _, err := r.ReadLine(); err != io.EOF; line, _, err = r.ReadLine() {
@@ -252,7 +252,7 @@ func NewGridFromFile(filename string) Grid {
 			log.Fatalf("can't read bank: %v", err)
 		}
 
-		row := make([]Cell, len(line))
+		row := make([]Day4Cell, len(line))
 		for x, c := range line {
 			row[x].value = c
 		}
@@ -262,7 +262,7 @@ func NewGridFromFile(filename string) Grid {
 	return grid
 }
 
-func (g Grid) Show() {
+func (g Day4Grid) Show() {
 	for y := range len(g) {
 		for x := range len(g[y]) {
 			if g[y][x].free {
@@ -276,7 +276,7 @@ func (g Grid) Show() {
 	fmt.Println()
 }
 
-func (g Grid) Mark() int {
+func (g Day4Grid) Mark() int {
 	count := 0
 	for y := range len(g) {
 		for x := range len(g[y]) {
@@ -295,7 +295,7 @@ func (g Grid) Mark() int {
 	return count
 }
 
-func (g Grid) Sweep() int {
+func (g Day4Grid) Sweep() int {
 	count := 0
 	for y := range len(g) {
 		for x := range len(g[y]) {
@@ -309,7 +309,7 @@ func (g Grid) Sweep() int {
 	return count
 }
 
-func (g Grid) CountNeighboursOf(x, y int) byte {
+func (g Day4Grid) CountNeighboursOf(x, y int) byte {
 	//       x-1   x   x+1
 	//
 	// y-1   -,-  -,0  -,+
@@ -329,14 +329,14 @@ func (g Grid) CountNeighboursOf(x, y int) byte {
 	return count
 }
 
-func (g Grid) CountRollAt(x, y int) byte {
+func (g Day4Grid) CountRollAt(x, y int) byte {
 	if g.ValueAt(x, y) == '@' {
 		return 1
 	}
 	return 0
 }
 
-func (g Grid) ValueAt(x, y int) byte {
+func (g Day4Grid) ValueAt(x, y int) byte {
 	if y < 0 || y >= len(g) || x < 0 || x >= len(g[y]) {
 		return 0
 	}
