@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+
+DEFAULT_YEAR=$(date "+%Y")
+DEFAULT_DIR="$HOME/aoc"
+
+usage() {
+  echo "Usage: $0 [-h] [-y YEAR] [-d day] DAY"
+  echo "Create scaffold files for Advent Of Code"
+  echo ""
+  echo "  -h        display this help and exit"
+  echo "  -y YEAR   (optional) create files for given year"
+  echo "            defaults to current year: $DEFAULT_YEAR"
+  echo "  -d DIR    (optional) create files on this directory"
+  echo "            defaults to $DEFAULT_DIR"
+}
+
+while getopts 'hy:d:' opt; do
+  case "$opt" in
+  h)
+    usage
+    exit 0
+    ;;
+  y)
+    year=$((OPTARG))
+    ;;
+  d)
+    dir=$((OPTARG))
+    ;;
+  *)
+    usage >&2
+    exit 1
+    ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+[ -z "$year" ] && year=$DEFAULT_YEAR
+[ -z "$dir" ] && dir=$DEFAULT_DIR
+
+[ -z "$1" ] && usage && exit 1 || day="$1"
+
+mkdir -p "$dir/$year/input"
+
+create_file_if_missing() {
+  local filename="$1"
+  local line
+  [ -e "$filename" ] && echo "ignoring $filename: already exist" && return 0
+  touch "$filename"
+  IFS=''
+  while read -r line; do
+    echo "$line" >>"$filename"
+  done
+  echo "creating $filename"
+}
+
+# main code file
+create_file_if_missing "$dir/$year/day$day.go" <<EOF
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"io"
+	"log"
+	"os"
+)
+
+func Day${day}Part1(filename string) int {
+	file, err := os.Open(filename)
+	if err != nil {
+		log.Fatalf("can't open file %q: %v", filename, err)
+	}
+
+	r := bufio.NewReader(file)
+	for {
+		line, _, err := r.ReadLine()
+		if err == io.EOF {
+			return 0
+		}
+		if err != nil {
+			log.Fatalf("can't read line from file %q: %v", filename, err)
+		}
+
+		fmt.Println(string(line))
+	}
+}
+
+func Day${day}Part2(filename string) int {
+	file, err := os.Open(filename)
+	if err != nil {
+		log.Fatalf("can't open file %q: %v", filename, err)
+	}
+
+	r := bufio.NewReader(file)
+	for {
+		line, _, err := r.ReadLine()
+		if err == io.EOF {
+			return 0
+		}
+		if err != nil {
+			log.Fatalf("can't read line from file %q: %v", filename, err)
+		}
+
+		fmt.Println(string(line))
+	}
+}
+EOF
+
+# test code file
+create_file_if_missing "$dir/$year/day${day}_test.go" <<EOF
+package main
+
+import (
+	"testing"
+)
+
+func TestDay${day}Part1(t *testing.T) {
+	filename := "input/day${day}.test"
+	want := -1
+	got := Day${day}Part1(filename)
+	if got != want {
+		t.Errorf("Day${day}Part1(%q) got %d; want: %d", filename, got, want)
+	}
+}
+
+func TestDay${day}Part2(t *testing.T) {
+	filename := "input/day${day}.test"
+	want := -1
+	got := Day${day}Part2(filename)
+	if got != want {
+		t.Errorf("Day${day}Part2(%q) got %d; want: %d", filename, got, want)
+	}
+}
+EOF
+
+# input files
+create_file_if_missing "$dir/$year/input/day${day}" <<EOF
+EOF
+create_file_if_missing "$dir/$year/input/day${day}.test" <<EOF
+EOF
