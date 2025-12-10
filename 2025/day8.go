@@ -202,7 +202,105 @@ mainLoop:
 	return result
 }
 
+// --- Part Two ---
+//
+// The Elves were right; they definitely don't have enough extension cables.
+// You'll need to keep connecting junction boxes together until they're all in
+// one large circuit.
+//
+// Continuing the above example, the first connection which causes all of the
+// junction boxes to form a single circuit is between the junction boxes at
+// 216,146,977 and 117,168,530. The Elves need to know how far those junction
+// boxes are from the wall so they can pick the right extension cable;
+// multiplying the X coordinates of those two junction boxes (216 and 117)
+// produces 25272.
+//
+// Continue connecting the closest unconnected pairs of junction boxes together
+// until they're all in the same circuit. What do you get if you multiply
+// together the X coordinates of the last two junction boxes you need to
+// connect?
 func Day8Part2(filename string) int {
+	file, err := os.Open(filename)
+	if err != nil {
+		log.Fatalf("can't open file %q: %v", filename, err)
+	}
+
+	var points []Point3D
+
+	r := bufio.NewReader(file)
+	for {
+		line, _, err := r.ReadLine()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatalf("can't read line from file %q: %v", filename, err)
+		}
+
+		points = append(points, NewPoint3DFromLine(line))
+	}
+
+	distances := heap.NewWithLess(PointPairLess)
+	for i := 0; i < len(points)-1; i++ {
+		a := points[i]
+		for j := i + 1; j < len(points); j++ {
+			b := points[j]
+			pair := NewPointPair(a, b)
+			distances.PushItem(pair)
+		}
+	}
+
+	circuits := map[Point3D][]Point3D{}
+
+	for _, p := range points {
+		circuits[p] = []Point3D{p}
+	}
+
+	i := 1
+mainLoop:
+	for distances.Len() > 0 {
+		pair := distances.PopItem()
+
+		a, b := pair.a, pair.b
+		la := len(circuits[pair.a])
+		lb := len(circuits[pair.b])
+
+		switch {
+		case la == 1 && lb > 1:
+			// MERGE a into b (swap a with b)
+			a, b = b, a
+		case la == 1 && lb == 1:
+		case la > 1 && lb == 1:
+		case la > 1 && lb > 1:
+			// MERGE b into a (keep a and b as they are)
+		}
+
+		i++
+
+		for _, p := range circuits[a] {
+			if p.Equal(b) {
+				// ignore it, is already there
+				continue mainLoop
+			}
+		}
+		for _, p := range circuits[b] {
+			if p.Equal(a) {
+				// ignore it, is already there
+				continue mainLoop
+			}
+		}
+
+		circuits[a] = append(circuits[a], circuits[b]...)
+
+		if len(circuits[a]) == len(points) {
+			return a.X * b.X
+		}
+
+		for _, p := range circuits[a] {
+			circuits[p] = circuits[a]
+		}
+	}
+
 	return 0
 }
 
