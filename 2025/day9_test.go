@@ -15,7 +15,7 @@ func TestDay9Part1(t *testing.T) {
 
 func TestDay9Part2(t *testing.T) {
 	filename := "input/day9.test"
-	want := 0
+	want := 24
 	got := Day9Part2(filename)
 	if got != want {
 		t.Errorf("Day9Part2(%q) got %d; want: %d", filename, got, want)

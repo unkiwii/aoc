@@ -103,7 +103,7 @@ import (
 // Using two red tiles as opposite corners, what is the largest area of any
 // rectangle you can make?
 func Day9Part1(filename string) int {
-	grid := NewDay9GridFromFile(filename)
+	grid := NewDay9GridFromFile(filename, false)
 	l := len(grid.redTiles)
 
 	var maxArea int
@@ -124,7 +124,62 @@ func Day9Part1(filename string) int {
 }
 
 func Day9Part2(filename string) int {
-	return 0
+	grid := NewDay9GridFromFile(filename, true)
+
+	var maxArea int
+
+	l := len(grid.redTiles)
+	for i := 0; i < l-1; i++ {
+	innerLoop:
+		for j := i + 1; j < l; j++ {
+			a := grid.redTiles[i]
+			b := grid.redTiles[j]
+
+			// TODO: this is not the answer as some points are outside
+			//
+			//   A----------B----+
+			//   |===========    |
+			//   |===========    |
+			// +-+===========    |
+			// | ============    |
+			// | ===+-------+    |
+			// | ===|@@@@@@@|    |
+			// | ===|@@@@@@@|    |
+			// | D==|@@@@@@@C----+
+			// |    |
+			// +----+
+			//
+			// A: top left
+			// C: bottom right
+			//
+			// All 4 corners (A, B, C and D) are red or green but area marked
+			// with @ is outside the field
+			top := min(a.Y, b.Y)
+			left := min(a.X, b.X)
+			bottom := max(a.Y, b.Y)
+			right := max(a.X, b.X)
+			if !grid.IsRedOrGreen(top, left) {
+				continue innerLoop
+			}
+			if !grid.IsRedOrGreen(top, right) {
+				continue innerLoop
+			}
+			if !grid.IsRedOrGreen(bottom, left) {
+				continue innerLoop
+			}
+			if !grid.IsRedOrGreen(bottom, right) {
+				continue innerLoop
+			}
+
+			r := NewRect(a, b)
+			area := r.Area()
+			if area > maxArea {
+				maxArea = area
+			}
+		}
+	}
+
+	return maxArea
 }
 
 type Point struct {
@@ -160,10 +215,12 @@ func (r Rect) Area() int {
 }
 
 type Day9Grid struct {
-	cells      map[Point]Day9Cell
-	redTiles   []Point
-	minX, minY int
-	maxX, maxY int
+	cells           map[Point]Day9Cell
+	redTiles        []Point
+	greenTiles      []Point
+	extraGreenTiles []Point
+	minX, minY      int
+	maxX, maxY      int
 }
 
 type Day9Cell byte
@@ -171,6 +228,7 @@ type Day9Cell byte
 const (
 	Day9CellEmpty = Day9Cell(0)
 	Day9CellRed   = Day9Cell(1)
+	Day9CellGreen = Day9Cell(2)
 )
 
 const (
@@ -180,7 +238,7 @@ const (
 	MinInt  = -MaxInt - 1
 )
 
-func NewDay9GridFromFile(filename string) Day9Grid {
+func NewDay9GridFromFile(filename string, withGreenTiles bool) Day9Grid {
 	file, err := os.Open(filename)
 	if err != nil {
 		log.Fatalf("can't open file %q: %v", filename, err)
@@ -228,18 +286,84 @@ func NewDay9GridFromFile(filename string) Day9Grid {
 		maxY = max(maxY, point.Y)
 	}
 
-	return Day9Grid{
-		cells:    cells,
-		redTiles: redTiles,
-		minX:     minX,
-		minY:     minY,
-		maxX:     maxX,
-		maxY:     maxY,
+	var greenTiles []Point
+
+	if withGreenTiles {
+		for i := 0; i < len(redTiles)-1; i++ {
+			for j := i + 1; j < len(redTiles); j++ {
+				a := redTiles[i]
+				b := redTiles[j]
+
+				if a.X == b.X {
+					top := min(a.Y, b.Y) + 1
+					bot := max(a.Y, b.Y) - 1
+					for y := top; y <= bot; y++ {
+						point := Point{X: a.X, Y: y}
+						greenTiles = append(greenTiles, point)
+						cells[point] = Day9CellGreen
+					}
+				}
+				if a.Y == b.Y {
+					top := min(a.X, b.X) + 1
+					bot := max(a.X, b.X) - 1
+					for x := top; x <= bot; x++ {
+						point := Point{X: x, Y: a.Y}
+						greenTiles = append(greenTiles, point)
+						cells[point] = Day9CellGreen
+					}
+				}
+			}
+		}
 	}
+
+	return Day9Grid{
+		cells:      cells,
+		redTiles:   redTiles,
+		greenTiles: greenTiles,
+		minX:       minX,
+		minY:       minY,
+		maxX:       maxX,
+		maxY:       maxY,
+	}
+}
+
+func (grid Day9Grid) IsRedOrGreen(x, y int) bool {
+	return grid.IsRed(x, y) || grid.IsGreen(x, y)
 }
 
 func (grid Day9Grid) IsRed(x, y int) bool {
 	return grid.cells[Point{X: x, Y: y}] == Day9CellRed
+}
+
+func (grid *Day9Grid) IsGreen(x, y int) (ret bool) {
+	if x < grid.minX || y < grid.minY || x > grid.maxX || y > grid.maxY {
+		return false
+	}
+
+	point := Point{X: x, Y: y}
+	green := grid.cells[point] == Day9CellGreen
+	if green {
+		return green
+	}
+
+	out := true
+	for nx := grid.minX; nx <= x; nx++ {
+		p := Point{X: nx, Y: y}
+
+		isRed := (grid.cells[p] == Day9CellRed)
+		isGreen := (grid.cells[p] == Day9CellGreen)
+		if isRed || isGreen {
+			if _, ok := grid.cells[Point{X: nx - 1, Y: y}]; !ok {
+				out = !out
+			}
+		}
+		if !isRed && !isGreen && !out {
+			grid.cells[Point{X: nx, Y: y}] = Day9CellGreen
+			return true
+		}
+	}
+
+	return false
 }
 
 func (grid Day9Grid) Show() {
@@ -260,6 +384,8 @@ func (grid Day9Grid) Show() {
 			}
 			if grid.IsRed(x, y) {
 				fmt.Print("#")
+			} else if grid.IsGreen(x, y) {
+				fmt.Print("X")
 			} else {
 				fmt.Print(".")
 			}
