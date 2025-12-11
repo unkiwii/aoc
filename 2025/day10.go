@@ -9,6 +9,8 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+
+	"github.com/unkiwii/aoc/lib/combinations"
 )
 
 // --- Day 10: Factory ---
@@ -113,13 +115,7 @@ func Day10Part1(filename string) int {
 		}
 
 		machine := NewDay10MachineFromLine(line)
-
-		fmt.Println()
-		fmt.Printf("running: %q\n", machine)
 		presses := machine.FindFewestButtonPresses()
-		fmt.Printf("presses: %d\n", presses)
-		fmt.Println()
-
 		result += presses
 	}
 }
@@ -243,10 +239,7 @@ func (m Day10Machine) String() string {
 	buf.WriteString(day10MachineStateString(m.state))
 	buf.WriteString(" | ")
 	buf.WriteString(day10MachineStateString(m.endState))
-	for _, wiring := range m.buttonWirings {
-		buf.WriteRune(' ')
-		buf.WriteString(day10MachineWiringString(wiring))
-	}
+	buf.WriteString(day10MachineWiringsString(m.buttonWirings))
 	buf.WriteString(" {")
 	for i, joltage := range m.joltageRequirements {
 		if i != 0 {
@@ -255,6 +248,15 @@ func (m Day10Machine) String() string {
 		buf.WriteString(strconv.Itoa(joltage))
 	}
 	buf.WriteRune('}')
+	return buf.String()
+}
+
+func day10MachineWiringsString(wirings [][]int) string {
+	var buf strings.Builder
+	for _, wiring := range wirings {
+		buf.WriteRune(' ')
+		buf.WriteString(day10MachineWiringString(wiring))
+	}
 	return buf.String()
 }
 
@@ -286,33 +288,30 @@ func day10MachineWiringString(wiring []int) string {
 }
 
 func (m Day10Machine) FindFewestButtonPresses() int {
-	// initialState := make([]bool, len(m.state))
+	initialState := make([]bool, len(m.state))
 	oldState := make([]bool, len(m.state))
 
 	// TODO: make this a bit vector so we can turn on/off things just by AND them?
-	minPresses := -1
-	presses := 0
-	for _, wiring := range m.buttonWirings {
-		copy(oldState, m.state)
-		for _, button := range wiring {
-			m.state[button] = !m.state[button]
-		}
-		presses++
+	for n := 1; n <= len(m.buttonWirings); n++ {
+		listOfWirings := combinations.Choose(n, m.buttonWirings)
 
-		fmt.Printf("  %s -> %s, pressed %s\n",
-			day10MachineStateString(oldState),
-			day10MachineStateString(m.state),
-			day10MachineWiringString(wiring),
-		)
+		for _, wirings := range listOfWirings {
+			presses := 0
+			copy(m.state, initialState)
 
-		if slices.Equal(m.state, m.endState) {
-			fmt.Printf("    FOUND END STATE!! IN %d PRESSES\n", presses)
-			if presses < minPresses || minPresses < 0 {
-				minPresses = presses
+			for _, wiring := range wirings {
+				copy(oldState, m.state)
+				for _, button := range wiring {
+					m.state[button] = !m.state[button]
+				}
+				presses++
 			}
-			presses = 0
+
+			if slices.Equal(m.state, m.endState) {
+				return presses
+			}
 		}
 	}
 
-	return minPresses
+	return len(m.buttonWirings)
 }
